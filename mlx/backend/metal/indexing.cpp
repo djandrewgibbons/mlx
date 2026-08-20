@@ -213,10 +213,13 @@ void Gather::eval_gpu(const std::vector<array>& inputs, array& out) {
 
   // Set index info
   //
-  // We don't need to check for empty idx_shapes because gather has a
-  // idx_ndim == 0 specialization
-  compute_encoder.set_vector_bytes(idx_shapes, 7);
-  compute_encoder.set_vector_bytes(idx_strides, 8);
+  // Scalar indices have idx_ndim == 0, so their shape and stride vectors are
+  // empty. Metal validation rejects setBytes(nullptr, 0, ...), and the scalar
+  // gather specialization does not read these bindings.
+  if (idx_ndim > 0) {
+    compute_encoder.set_vector_bytes(idx_shapes, 7);
+    compute_encoder.set_vector_bytes(idx_strides, 8);
+  }
   compute_encoder.set_vector_bytes(idx_contigs, 9);
   compute_encoder.set_bytes(idx_ndim, 10);
 
